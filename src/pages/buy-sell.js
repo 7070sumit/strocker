@@ -31,10 +31,10 @@ const buySell = ({ initialStocks }) => {
 
     if (loading) return <div>loading...</div>;
 
-    if (!session|| !session.user) {
-        router.push("/login");
-        return null;
-    }
+    // if (!session|| !session.user) {
+    //     router.push("/login");
+    //     return null;
+    // }
 
     
 
@@ -105,25 +105,25 @@ return (
 
 export default buySell
 
-export async function getServerSideProps(context) {
-    try {
-        const baseURL = process.env.NEXTAUTH_URL || "http://localhost:3000";
+// export async function getServerSideProps(context) {
+//     try {
+//         const baseURL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
-        const stockRes = await axios.get(`${baseURL}/api/top-stocks`, {
-            params: { page: "top-stocks" },
-        });
+//         const stockRes = await axios.get(`${baseURL}/api/top-stocks`, {
+//             params: { page: "top-stocks" },
+//         });
 
-        return {
-            props: {
-                initialStocks: stockRes.data,
-            },
-        };
-    } catch (error) {
-        console.error("Error fetching data:", error);
-        return {
-            props: {
-                initialStocks: {},
-            },
-        };
-    }
-}
+//         return {
+//             props: {
+//                 initialStocks: stockRes.data,
+//             },
+//         };
+//     } catch (error) {
+//         console.error("Error fetching data:", error);
+//         return {
+//             props: {
+//                 initialStocks: {},
+//             },
+//         };
+//     }
+// }
