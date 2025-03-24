@@ -10,23 +10,41 @@ import axios from "axios";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import CountUp from 'react-countup';
 
-
 import { FaCaretUp } from "react-icons/fa";
 import { FaCaretDown } from "react-icons/fa";
 import { delay } from 'framer-motion';
 
+// Mock data for testing
+const mockStockData = {
+  "AAPL": { c: 187.68, o: 184.35 },
+  "MSFT": { c: 423.56, o: 425.10 },
+  "AMZN": { c: 178.25, o: 175.50 },
+  "TSLA": { c: 182.55, o: 185.20 }
+};
+
+const mockProfile = [
+  { symbol: "AAPL", quantity: 10 },
+  { symbol: "MSFT", quantity: 5 },
+  { symbol: "AMZN", quantity: 8 },
+  { symbol: "TSLA", quantity: 12 }
+];
 
 const portfolio = ({ initialProfile }) => {
     const [mounted, setMounted] = useState(false);
     const { data: session, status } = useSession();
     const loading = status === "loading";
-    const [profile, setProfile] = useState(initialProfile);
+    const [profile, setProfile] = useState(initialProfile || mockProfile);
     const router = useRouter();
     const [stockData, setStockData] = useState({});
     const title="Your Portfolio";
 
     useEffect(() => {
         setMounted(true);
+        
+        // Using mock data for now - remove this when ready to use API
+        setStockData(mockStockData);
+        
+        // Uncomment this when API is ready
         async function getStockData() {
             try {
                 const data = await Promise.all(
@@ -49,19 +67,15 @@ const portfolio = ({ initialProfile }) => {
         getStockData();
     }, [profile]);
 
-
     if (!mounted) return null;
 
     if (loading) {
         return <div>Loading...</div>;
     }
 
-
-
-
-    //   if (!session || !session.user) {
-    //     router.push("/login");
-    //   }
+    if (!session || !session.user) {
+      router.push("/login");
+    }
 
     const links = navLinks;
 
@@ -72,43 +86,62 @@ const portfolio = ({ initialProfile }) => {
         }, 0).toFixed(2); // Round to 2 decimal places
     };
 
-
-
     return (
         <div className='bg-gray-200 h-[100vh] dark:bg-zinc-950'>
-
             <Logo />
-
 
             <div className='heading flex justify-evenly text-4xl font-bold mt-4 ml-5 mb-8'>Your Portfolio</div>
             <div className='flex flex-col justify-center items-center bg-white dark:bg-zinc-900 drop-shadow-2xl p-6 mx-5 rounded-3xl'>
-                <div className='text-7xl font-bold'>$<CountUp end={getTotalAssetValue()} delay={5}/></div>
+                <div className='text-7xl font-bold'>$<CountUp end={parseFloat(getTotalAssetValue())} delay={5}/></div>
                 <div className='mt-4'>Total Asset</div>
             </div>
 
-            {
-                profile.map((stock, index) => (
-                    <div key={index} className=' border-b-2 dark:border-white border-zinc-900 drop-shadow-2xl bg-gray-200 dark:bg-zinc-900 mt-4 p-6 mx-5 rounded-3xl'>
-                        <div className='flex justify-between'>
-                            <div className='flex items-center text-2xl font-bold'><TextGenerateEffect words={stock.symbol}/></div>
-                            <div className='text-end flex flex-col justify-end'>
-                                {stockData[stock.symbol]?.c < stockData[stock.symbol]?.o ? (<div className='flex items-center justify-end text-xl font-bold text-red-600'> ${(stockData[stock.symbol]?.c) * stock.quantity}<span className='text-sm'>&nbsp;{((stockData[stock.symbol]?.c - stockData[stock.symbol]?.o) / stockData[stock.symbol]?.o).toFixed(2)}%</span></div>) : (<div className=' flex items-center justify-end text-xl font-bold text-green-600'> ${(stockData[stock.symbol]?.c) * stock.quantity}<span className='text-sm'>&nbsp;{((stockData[stock.symbol]?.c - stockData[stock.symbol]?.o) / stockData[stock.symbol]?.o).toFixed(2)}%</span></div>)}
-                                <div className='text-sm text-end py-3'>Qty:&nbsp;{stock.quantity}</div>
-                                {stockData[stock.symbol]?.c < stockData[stock.symbol]?.o ? (<div className='flex items-center justify-end text-sm font-bold text-red-600'><span className='dark:text-white text-black'>LTP: &nbsp; </span><FaCaretDown /> ${(stockData[stock.symbol]?.c)}</div>) : (<div className=' flex items-center justify-end text-sm font-bold text-green-600'><span className='dark:text-white text-black'>LTP: &nbsp; </span><FaCaretUp /> ${(stockData[stock.symbol]?.c)}</div>)}
-                            </div>
+            {profile.map((stock, index) => (
+                <div key={index} className='border-b-2 dark:border-white border-zinc-900 drop-shadow-2xl bg-gray-200 dark:bg-zinc-900 mt-4 p-6 mx-5 rounded-3xl'>
+                    <div className='flex justify-between'>
+                        <div className='flex items-center text-2xl font-bold'>
+                            <TextGenerateEffect words={stock.symbol}/>
+                        </div>
+                        <div className='text-end flex flex-col justify-end'>
+                            {stockData[stock.symbol]?.c < stockData[stock.symbol]?.o ? (
+                                <div className='flex items-center justify-end text-xl font-bold text-red-600'> 
+                                    ${((stockData[stock.symbol]?.c || 0) * stock.quantity).toFixed(2)}
+                                    <span className='text-sm'>&nbsp;
+                                        {stockData[stock.symbol] ? ((stockData[stock.symbol].c - stockData[stock.symbol].o) / stockData[stock.symbol].o * 100).toFixed(2) : 0}%
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className='flex items-center justify-end text-xl font-bold text-green-600'> 
+                                    ${((stockData[stock.symbol]?.c || 0) * stock.quantity).toFixed(2)}
+                                    <span className='text-sm'>&nbsp;
+                                        {stockData[stock.symbol] ? ((stockData[stock.symbol].c - stockData[stock.symbol].o) / stockData[stock.symbol].o * 100).toFixed(2) : 0}%
+                                    </span>
+                                </div>
+                            )}
+                            <div className='text-sm text-end py-3'>Qty:&nbsp;{stock.quantity}</div>
+                            {stockData[stock.symbol]?.c < stockData[stock.symbol]?.o ? (
+                                <div className='flex items-center justify-end text-sm font-bold text-red-600'>
+                                    <span className='dark:text-white text-black'>LTP: &nbsp; </span>
+                                    <FaCaretDown /> ${(stockData[stock.symbol]?.c || 0).toFixed(2)}
+                                </div>
+                            ) : (
+                                <div className='flex items-center justify-end text-sm font-bold text-green-600'>
+                                    <span className='dark:text-white text-black'>LTP: &nbsp; </span>
+                                    <FaCaretUp /> ${(stockData[stock.symbol]?.c || 0).toFixed(2)}
+                                </div>
+                            )}
                         </div>
                     </div>
-                ))
-            }
+                </div>
+            ))}
 
             <Theme />
             <div className="flex fixed bottom-10 items-center justify-center h-[3rem] w-full">
                 <FloatingDock items={links} />
             </div>
-
         </div>
-    )
-}
+    );
+};
 
 export default portfolio;
 
@@ -131,10 +164,6 @@ export async function getServerSideProps(context) {
             params: { email },
         });
 
-
-
-
-
         return {
             props: {
                 initialProfile: profileRes.data.data,
@@ -144,7 +173,7 @@ export async function getServerSideProps(context) {
         console.error("Error fetching data:", error);
         return {
             props: {
-                initialProfile: { img: "", bio: "" },
+                initialProfile: [],
             },
         };
     }
